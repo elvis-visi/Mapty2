@@ -78,7 +78,13 @@ class App {
   #workouts = [];
 
   constructor() {
+    //get user's position
     this._getPosition();
+
+    //Get data from local storage
+    this._getLocalStorage();
+
+    //Attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
@@ -96,14 +102,14 @@ class App {
   }
 
   _loadMap(position) {
-    console.log(position);
+    // console.log(position);
     const { latitude } = position.coords;
     const { longitude } = position.coords;
-    console.log(`https://www.google.com/maps/@${latitude},${longitude},13z`);
+    // console.log(`https://www.google.com/maps/@${latitude},${longitude},13z`);
 
     //when we get the coords we want to display the map
     const coords = [latitude, longitude];
-    console.log(`this`, this);
+    // console.log(`this`, this);
     this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
     //   console.log(map);
     L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -118,6 +124,8 @@ class App {
 
     //whenever we click on the map this event happens
     this.#map.on('click', this._showForm.bind(this));
+
+    this.#workouts.forEach(work => this._renderWorkoutMarker(work));
   }
 
   _showForm(mapE) {
@@ -185,7 +193,7 @@ class App {
 
     //add new object to workout array
     this.#workouts.push(workout);
-    console.log(`workout array`, this.#workouts);
+    // console.log(`workout array`, this.#workouts);
     //render workout on map as marker
     this._renderWorkoutMarker(workout);
 
@@ -194,6 +202,9 @@ class App {
 
     //Hide + Clear input fields
     this._hideForm();
+
+    //Set local storage to all workouts
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -271,7 +282,7 @@ class App {
     //important because the top ancestor is where we have the dataid
     //which we will use to find the actual workout in the workouts array
     const workoutEL = e.target.closest('.workout');
-    console.log(workoutEL);
+    // console.log(workoutEL);
 
     if (!workoutEL) return;
 
@@ -279,7 +290,7 @@ class App {
       work => work.id === workoutEL.dataset.id
     );
 
-    console.log(workout);
+    // console.log(workout);
 
     //Move to workout, Leaflet method setView
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
@@ -290,7 +301,29 @@ class App {
     });
 
     //using public interface
-    workout.click();
+    // workout.click();
+  }
+
+  _setLocalStorage() {
+    //localStorage APi  key-value storage.  use for small amount of data only
+
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    // console.log(`data`, data);
+
+    if (!data) return;
+
+    this.#workouts = data;
+
+    this.#workouts.forEach(work => this._renderWorkout(work));
+  }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
